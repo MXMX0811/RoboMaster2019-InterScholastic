@@ -4,6 +4,8 @@
 # blobs in the image. This example in particular looks for dark green objects.
 
 import sensor, image, time
+import json
+from pyb import UART
 
 # For color tracking to work really well you should ideally be in a very, very,
 # very, controlled enviroment where the lighting is constant...
@@ -22,6 +24,7 @@ sensor.set_framesize(sensor.QQVGA) # use QQVGA for speed.
 sensor.skip_frames(10) # Let new settings take affect.
 sensor.set_auto_whitebal(False)
 #关闭白平衡。白平衡是默认开启的，在颜色识别中，需要关闭白平衡。
+uart = UART(3, 115200)
 
 def compareBlob(blob1, blob2):
     # 这里我们选择了pixels作为指标比对二者的代码
@@ -36,7 +39,9 @@ def compareBlob(blob1, blob2):
 
 clock = time.clock() # Tracks FPS.
 
+
 while(True):
+    data=[]
     clock.tick() # Track elapsed milliseconds between snapshots().
     bigBlob = None #最大的色块
     img = sensor.snapshot() # Take a picture and return the image.
@@ -58,8 +63,12 @@ while(True):
     img.draw_cross(bigBlob.cx(), bigBlob.cy())
     error_x = bigBlob.cx() - 80
     error_y = 60 - bigBlob.cy()
-    print("error_x:",error_x)
-    print("error_y:",error_y)
+    #print("error_x:",error_x)
+    #print("error_y:",error_y)
+    data.append((error_x,error_y))
+    data_out = json.dumps(set(data))
+    uart.write(data_out +'\n')
+    print('you send:',data_out)
 
     print(clock.fps()) # Note: Your OpenMV Cam runs about half as fast while
     # connected to your computer. The FPS should increase once disconnected.
